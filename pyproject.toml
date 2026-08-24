@@ -1,0 +1,28 @@
+[project]
+name = "odoo-mcp"
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp[cli]>=1.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "anyio",
+]
+
+[project.scripts]
+odoo-mcp = "odoo_mcp.__main__:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["odoo_mcp"]
+
+[tool.pytest.ini_options]
+# Let test modules import the workspace-root CLI (odoo_tasks.py) under pytest.
+pythonpath = ["."]
