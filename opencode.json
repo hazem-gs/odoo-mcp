@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "odoo": {
+      "type": "local",
+      "command": ["uv", "run", "python", "-m", "odoo_mcp"],
+      "environment": {
+        "ODOO_URL": "{env:ODOO_URL}",
+        "ODOO_DB": "{env:ODOO_DB}",
+        "ODOO_USERNAME": "{env:ODOO_USERNAME}",
+        "ODOO_PASSWORD": "{env:ODOO_PASSWORD}"
+      },
+      "enabled": true
+    }
+  }
+}
