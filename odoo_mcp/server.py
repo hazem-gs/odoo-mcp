@@ -15,6 +15,7 @@ Nothing in this module writes to stdout - stdout is the stdio transport.
 """
 
 import datetime
+import math
 
 from mcp.server.mcpserver import MCPServer
 
@@ -210,7 +211,7 @@ async def create_timesheet(
     hours must be > 0; date must be YYYY-MM-DD. With dry_run=true returns
     {"dry_run": true, "vals": {...}} without writing.
     """
-    if hours <= 0:
+    if not math.isfinite(hours) or hours <= 0:
         raise ValueError("Hours must be greater than 0.")
     entry_date = (
         tasks._validate_date(date)
@@ -247,7 +248,7 @@ async def update_timesheet(
     """
     vals: dict = {}
     if hours is not None:
-        if hours <= 0:
+        if not math.isfinite(hours) or hours <= 0:
             raise ValueError("Hours must be greater than 0.")
         vals["unit_amount"] = hours
     if date is not None:
