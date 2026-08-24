@@ -39,6 +39,16 @@ class OdooConfigDefaultsTests(unittest.TestCase):
 
 
 class OdooConfigMissingCredentialsTests(unittest.TestCase):
+    def test_http_url_is_rejected(self) -> None:
+        env = {
+            "ODOO_URL": "http://odoo.example",
+            "ODOO_USERNAME": "u@example.com",
+            "ODOO_PASSWORD": "p",
+        }
+
+        with self.assertRaises(ConfigError):
+            OdooConfig.from_env(env)
+
     def test_missing_credentials_named_without_values(self) -> None:
         with self.assertRaises(ConfigError) as ctx:
             OdooConfig.from_env({})

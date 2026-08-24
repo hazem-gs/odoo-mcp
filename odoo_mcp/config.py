@@ -7,6 +7,7 @@ missing variables but never include their values.
 
 import os
 from dataclasses import dataclass
+from urllib.parse import urlparse
 
 ODOO_DEFAULT_URL = "https://odoo.geosigmoid.group"
 ODOO_DEFAULT_DB = "odoo"
@@ -66,8 +67,12 @@ class OdooConfig:
             raise ConfigError(
                 "Missing required environment variables: " + ", ".join(missing)
             )
+        url = env.get("ODOO_URL") or ODOO_DEFAULT_URL
+        parsed_url = urlparse(url)
+        if parsed_url.scheme != "https" or not parsed_url.netloc:
+            raise ConfigError("ODOO_URL must be an absolute HTTPS URL.")
         return cls(
-            url=env.get("ODOO_URL") or ODOO_DEFAULT_URL,
+            url=url,
             db=env.get("ODOO_DB") or ODOO_DEFAULT_DB,
             username=env["ODOO_USERNAME"],
             password=env["ODOO_PASSWORD"],
