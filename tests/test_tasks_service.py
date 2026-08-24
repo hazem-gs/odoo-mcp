@@ -34,6 +34,13 @@ class ValidateUpdateValsTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_update_vals(progress=-0.5)
 
+    def test_non_finite_progress_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            validate_update_vals(progress=float("nan"))
+
+        with self.assertRaises(ValueError):
+            validate_update_vals(progress=float("inf"))
+
     def test_negative_allocated_hours_rejected(self) -> None:
         with self.assertRaises(ValueError):
             validate_update_vals(allocated_hours=-1)

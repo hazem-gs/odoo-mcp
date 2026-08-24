@@ -1,6 +1,7 @@
 """Project-task domain operations for a self-hosted Odoo instance."""
 
 import datetime
+import math
 from dataclasses import dataclass
 
 from odoo_mcp.rpc import OdooRpcError, execute_kw
@@ -75,11 +76,11 @@ def validate_update_vals(
     if description is not None:
         vals["description"] = description
     if progress is not None:
-        if not 0 <= progress <= 100:
+        if not math.isfinite(progress) or not 0 <= progress <= 100:
             raise ValueError("Progress must be between 0 and 100.")
         vals["progress"] = progress
     if allocated_hours is not None:
-        if allocated_hours < 0:
+        if not math.isfinite(allocated_hours) or allocated_hours < 0:
             raise ValueError("Allocated hours must be >= 0.")
         vals["allocated_hours"] = allocated_hours
     if priority is not None:
