@@ -57,6 +57,10 @@ class CreateTimesheetTests(unittest.TestCase):
         with patch.object(ts, "execute_kw") as execute:
             with self.assertRaises(ValueError):
                 ts.create_timesheet("https://odoo.example", "db", 1, "pw", 252, 0)
+            with self.assertRaises(ValueError):
+                ts.create_timesheet(
+                    "https://odoo.example", "db", 1, "pw", 252, float("nan")
+                )
 
         execute.assert_not_called()
 

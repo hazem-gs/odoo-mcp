@@ -1,6 +1,7 @@
 """Timesheet domain operations (account.analytic.line) for Odoo."""
 
 import datetime
+import math
 
 from odoo_mcp.rpc import OdooRpcError, execute_kw
 from odoo_mcp.tasks import _validate_date
@@ -53,7 +54,7 @@ def create_timesheet(
     description: str | None = None,
 ) -> int:
     """Log hours on a task; returns the new timesheet entry id."""
-    if hours <= 0:
+    if not math.isfinite(hours) or hours <= 0:
         raise ValueError("Hours must be greater than 0.")
     entry_date = (
         _validate_date(date)
@@ -95,7 +96,7 @@ def update_timesheet(
     """Modify an existing timesheet entry."""
     vals: dict = {}
     if hours is not None:
-        if hours <= 0:
+        if not math.isfinite(hours) or hours <= 0:
             raise ValueError("Hours must be greater than 0.")
         vals["unit_amount"] = hours
     if date is not None:
