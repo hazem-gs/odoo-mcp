@@ -26,6 +26,9 @@ uv sync
 | `ODOO_USERNAME` | Your login email | required |
 | `ODOO_PASSWORD` | Password **or external API key** | required |
 
+`ODOO_URL` must be an absolute HTTPS URL so credentials are never sent over
+cleartext HTTP.
+
 An **API key is strongly recommended** over a password (Odoo: Preferences →
 Account Security → New API Key): it is revocable and cannot be used for web
 login. Copy `.env.example` to `.env`, fill it in, and load it into your shell,
