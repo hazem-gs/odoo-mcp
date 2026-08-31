@@ -40,7 +40,11 @@ import json
 import os
 import sys
 
-from odoo_mcp.config import ODOO_DEFAULT_DB as DEFAULT_DB, ODOO_DEFAULT_URL as DEFAULT_URL
+from odoo_mcp.config import (
+    ODOO_DEFAULT_DB as DEFAULT_DB,
+    ODOO_DEFAULT_URL as DEFAULT_URL,
+    load_env_file,
+)
 from odoo_mcp.rpc import OdooRpcError, authenticate, execute_kw, json_rpc
 from odoo_mcp.timesheets import (
     TIMESHEET_FIELDS,
@@ -65,28 +69,6 @@ from odoo_mcp.tasks import (
     update_task,
     validate_update_vals,
 )
-
-def load_env_file(path: str) -> None:
-    """Load KEY=VALUE pairs from *path* into os.environ (no override).
-
-    Lines starting with '#' are ignored, as are empty lines. Values may be
-    wrapped in single or double quotes. Existing environment variables win.
-    """
-    if not os.path.isfile(path):
-        return
-    with open(path, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, _, value = line.partition("=")
-            key = key.strip()
-            value = value.strip()
-            if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
-                value = value[1:-1]
-            if key and key not in os.environ:
-                os.environ[key] = value
-
 
 def format_task_detail(task: dict) -> str:
     """Render a single task as key/value lines for the 'show' command."""

@@ -23,8 +23,8 @@ def load_env_file(path: str) -> None:
     absent OR set to an empty string; a real value already in the environment
     always wins. Empty-string filling matters because MCP launchers inject the
     configured ``environment`` block verbatim - unset placeholders arrive as
-    empty strings rather than being omitted. Mirrors odoo_tasks.py's loader
-    except for that empty-string case.
+    empty strings rather than being omitted. This is the single loader shared
+    by the MCP server and the odoo_tasks.py CLI.
     """
     if not os.path.isfile(path):
         return
