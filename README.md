@@ -1,7 +1,7 @@
 # Odoo MCP server for OpenCode
 
 This workspace ships a local **stdio MCP server** (`odoo_mcp`) that exposes your
-self-hosted Odoo project tasks, chatter, and timesheets as nine typed tools an
+self-hosted Odoo project tasks, chatter, and timesheets as ten typed tools an
 agent can call directly. The same repository still contains the original
 `odoo_tasks.py` CLI — unchanged behaviorally — which shares the service layer
 with the MCP server.
@@ -73,6 +73,7 @@ Mutating tools **execute immediately by default**; every one accepts a
 | --- | --- |
 | `list_my_tasks` | Tasks assigned to you; filter by project, stage, state, due dates |
 | `get_task` | Full detail of one task (planned/logged hours included) |
+| `create_task` | Create a task in a project; optional description/priority/deadline/hours/stage; assignees default to you |
 | `update_task` | Set name/description/priority/deadline/hours/state/stage; `append_description` merges text into the existing description |
 | `post_task_message` | Post to a task's chatter (followers get notified) |
 | `get_task_states` | Valid workflow state codes on this server + which are terminal |

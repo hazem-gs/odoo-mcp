@@ -2,7 +2,7 @@
 
 Spawns the real server process (no shell), performs the newline-delimited
 JSON-RPC handshake (initialize -> initialized notification -> tools/list)
-and asserts serverInfo.name plus the exact nine tool names. Reads run with a
+and asserts serverInfo.name plus the exact ten tool names. Reads run with a
 30s timeout via a worker thread (pipes on Windows have no read timeouts).
 The child is terminated in a finally block. No network, no real credentials.
 """
@@ -18,6 +18,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXPECTED_TOOLS = {
     "list_my_tasks",
     "get_task",
+    "create_task",
     "update_task",
     "post_task_message",
     "get_task_states",
@@ -96,7 +97,7 @@ def test_stdio_handshake_and_tools_list():
 
         names = {tool["name"] for tool in tools_msg["result"]["tools"]}
         assert names == EXPECTED_TOOLS
-        assert len(names) == 9
+        assert len(names) == 10
     finally:
         proc.terminate()
         try:

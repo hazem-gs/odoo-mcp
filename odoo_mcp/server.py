@@ -4,7 +4,7 @@ Built on the installed SDK's high-level ``MCPServer`` class
 (``from mcp.server.mcpserver import MCPServer``; verified against the pinned
 ``mcp`` 2.0.0 install - the legacy ``FastMCP`` name does not exist there).
 
-Exactly nine tools are exposed; there is deliberately no generic model/method
+Exactly ten tools are exposed; there is deliberately no generic model/method
 passthrough. Every tool is stateless: it resolves credentials from the
 environment via ``OdooConfig.from_env()`` and authenticates per call,
 mirroring the CLI's semantics. Domain errors (``ConfigError``,
@@ -12,6 +12,11 @@ mirroring the CLI's semantics. Domain errors (``ConfigError``,
 SDK converts them into readable tool errors on the wire.
 
 Nothing in this module writes to stdout - stdout is the stdio transport.
+
+Size note: this file intentionally exceeds a 250-line working-memory ceiling.
+It is the complete tool registry - one stateless ``@mcp.tool`` per domain
+operation, all sharing ``_connect`` - and cannot be split without fighting
+``MCPServer``'s decorator registration.
 """
 
 import datetime
@@ -144,6 +149,52 @@ async def update_task(
     if updated is None:
         raise rpc.OdooRpcError(f"Task {task_id} not found or no read access.")
     return updated
+
+
+@mcp.tool()
+async def create_task(
+    project_id: int,
+    name: str,
+    description: str | None = None,
+    priority: int | None = None,
+    deadline: str | None = None,
+    allocated_hours: float | None = None,
+    stage: str | None = None,
+    assignee_ids: list[int] | None = None,
+    dry_run: bool = False,
+) -> dict:
+    """Create a new task in a project; returns the created task's full detail.
+
+    Requires project_id (from Odoo, e.g. the id in the project's URL) and a
+    non-empty name. Optional: description, priority (0 low .. 3 urgent),
+    deadline (YYYY-MM-DD), allocated_hours (planned effort), stage (exact
+    stage display name), assignee_ids (Odoo user ids; defaults to the
+    connecting user so the task appears in list_my_tasks). With dry_run=true
+    returns {"dry_run": true, "vals": {...}} without writing.
+    """
+    cleaned = name.strip()
+    if not cleaned:
+        raise ValueError("Task name is required - pass a non-empty name.")
+    vals = tasks.validate_update_vals(
+        name=cleaned,
+        description=description,
+        priority=priority,
+        deadline=deadline,
+        allocated_hours=allocated_hours,
+    )
+    vals["project_id"] = project_id
+    url, db, uid, password = _connect()
+    if stage is not None:
+        vals["stage_id"] = tasks.find_stage_id(url, db, uid, password, stage)
+    if dry_run:
+        return {"dry_run": True, "vals": vals}
+    task_id = tasks.create_task(url, db, uid, password, vals, assignee_ids=assignee_ids)
+    created = tasks.fetch_task(url, db, uid, password, task_id, tasks.SHOW_FIELDS)
+    if created is None:
+        raise rpc.OdooRpcError(
+            f"Task {task_id} was created but could not be read back."
+        )
+    return created
 
 
 @mcp.tool()

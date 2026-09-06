@@ -31,6 +31,7 @@ from odoo_mcp import timesheets as timesheets_mod
 EXPECTED_TOOLS = {
     "list_my_tasks",
     "get_task",
+    "create_task",
     "update_task",
     "post_task_message",
     "get_task_states",
@@ -139,6 +140,7 @@ def fake_rpc(monkeypatch: pytest.MonkeyPatch) -> FakeExecuteKw:
         "project.task", "search_read", task_search_read_handler({252: TASK_ROW})
     )
     fake.route("project.task", "write", True)
+    fake.route("project.task", "create", 777)
     fake.route("project.task", "message_post", 555)
     fake.route("project.task.type", "search_read", [{"id": 3, "name": "In Progress"}])
     fake.route("res.users", "read", [{"employee_id": [7, "Emp Seven"]}])
@@ -209,12 +211,12 @@ def error_text(result) -> str:
 
 
 @pytest.mark.anyio
-async def test_server_exposes_exactly_the_nine_documented_tools():
+async def test_server_exposes_exactly_the_ten_documented_tools():
     async with mcp_client() as client:
         listed = await client.list_tools()
         names = {tool.name for tool in listed.tools}
     assert names == EXPECTED_TOOLS
-    assert len(names) == 9
+    assert len(names) == 10
 
 
 # --- list_my_tasks --------------------------------------------------------
@@ -322,6 +324,87 @@ async def test_update_task_append_description_merges_after_blank_line(fake_rpc):
     assert fake_rpc.writes("project.task", "write") == [
         ([[252], {"description": "existing notes\n\nnew bit"}], None)
     ]
+
+
+# --- create_task ------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_create_task_writes_vals_and_returns_created_row(fake_rpc):
+    created = dict(TASK_ROW, id=777, name="New task", user_ids=[2])
+    fake_rpc.route(
+        "project.task",
+        "search_read",
+        task_search_read_handler({777: created, 252: TASK_ROW}),
+    )
+    async with mcp_client() as client:
+        result = await call(
+            client,
+            "create_task",
+            {
+                "project_id": 1,
+                "name": "  New task  ",
+                "description": "spec in chatter",
+                "priority": 2,
+                "deadline": "2026-09-15",
+                "allocated_hours": 8,
+                "stage": "In Progress",
+            },
+        )
+    assert payload(result) == created
+    (args, _) = fake_rpc.writes("project.task", "create")[0]
+    vals = args[0]
+    assert vals["name"] == "New task"
+    assert vals["project_id"] == 1
+    assert vals["description"] == "spec in chatter"
+    assert vals["priority"] == 2
+    assert vals["date_deadline"] == "2026-09-15"
+    assert vals["allocated_hours"] == 8.0
+    assert vals["stage_id"] == 3
+    # Default assignee is the authenticated user (uid 2 per fake_auth).
+    assert vals["user_ids"] == [(6, 0, [2])]
+
+
+@pytest.mark.anyio
+async def test_create_task_explicit_assignees_override_default(fake_rpc):
+    created = dict(TASK_ROW, id=777, name="New task", user_ids=[5, 2])
+    fake_rpc.route(
+        "project.task",
+        "search_read",
+        task_search_read_handler({777: created, 252: TASK_ROW}),
+    )
+    async with mcp_client() as client:
+        result = await call(
+            client,
+            "create_task",
+            {"project_id": 1, "name": "New task", "assignee_ids": [5, 2]},
+        )
+    assert payload(result) == created
+    (args, _) = fake_rpc.writes("project.task", "create")[0]
+    assert args[0]["user_ids"] == [(6, 0, [5, 2])]
+
+
+@pytest.mark.anyio
+async def test_create_task_dry_run_previews_without_writing(fake_rpc):
+    async with mcp_client() as client:
+        result = await call(
+            client,
+            "create_task",
+            {"project_id": 1, "name": "Draft", "stage": "In Progress", "dry_run": True},
+        )
+    assert payload(result) == {
+        "dry_run": True,
+        "vals": {"name": "Draft", "project_id": 1, "stage_id": 3},
+    }
+    assert fake_rpc.writes("project.task", "create") == []
+
+
+@pytest.mark.anyio
+async def test_create_task_rejects_blank_name(fake_rpc):
+    async with mcp_client() as client:
+        result = await call(client, "create_task", {"project_id": 1, "name": "   "})
+    assert "Task name is required" in error_text(result)
+    assert fake_rpc.writes("project.task", "create") == []
 
 
 # --- post_task_message ------------------------------------------------------

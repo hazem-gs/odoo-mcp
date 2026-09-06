@@ -143,6 +143,31 @@ def update_task(
     return True
 
 
+def create_task(
+    url: str,
+    db: str,
+    uid: int,
+    password: str,
+    vals: dict,
+    assignee_ids: list[int] | None = None,
+) -> int:
+    """Create a task from *vals* (needs ``name`` + ``project_id``); returns its id.
+
+    Assignees default to the authenticated user so the new task shows up in
+    ``fetch_my_tasks``; pass ``assignee_ids`` to override.
+    """
+    create_vals = dict(vals)
+    create_vals["user_ids"] = [
+        (6, 0, assignee_ids if assignee_ids is not None else [uid])
+    ]
+    result = execute_kw(
+        url, db, uid, password, "project.task", "create", [create_vals]
+    )
+    if not isinstance(result, int):
+        raise OdooRpcError(f"Task create failed (server returned {result!r}).")
+    return result
+
+
 def find_stage_id(url: str, db: str, uid: int, password: str, name: str) -> int:
     """Resolve a task stage by its exact display name."""
     stages = execute_kw(
